@@ -39,6 +39,7 @@ public:
 			float minY = 4.0f;
 			float maxY = 6.0f;
 			
+            // 随机在范围内生成400个b2CircleShape
 			for (int32 i = 0; i < 400; ++i)
 			{
 				b2BodyDef bd;
@@ -50,11 +51,12 @@ public:
 		}
 		
 		{
+            // 设置启动碰撞的矩形
 			b2PolygonShape shape;
-			shape.SetAsBox(1.5f, 1.5f);
+			shape.SetAsBox(1.2f, 1.2f);
 			b2BodyDef bd;
 			bd.type = b2_dynamicBody;
-			bd.position.Set(-40.0f,5.0f);
+			bd.position.Set(-30.0f,5.0f);
 			bd.bullet = true;
 			b2Body* body = m_world->CreateBody(&bd);
 			body->CreateFixture(&shape, 1.0f);

@@ -56,15 +56,15 @@ struct B2_API b2BodyDef
 	{
 		position.Set(0.0f, 0.0f);
 		angle = 0.0f;
-		linearVelocity.Set(0.0f, 0.0f);
+		linearVelocity.Set(0.0f, 0.0f);     // 刚体线性速度
 		angularVelocity = 0.0f;
-		linearDamping = 0.0f;
-		angularDamping = 0.0f;
+		linearDamping = 0.0f;               // 刚体线性速度阻尼
+		angularDamping = 0.0f;              // 刚体角旋转时的角速度阻尼
 		allowSleep = true;
 		awake = true;
 		fixedRotation = false;
-		bullet = false;
-		type = b2_staticBody;
+		bullet = false;             // 是否模拟告诉子弹，开启CCD碰撞检测
+		type = b2_staticBody;       // 刚体类型
 		enabled = true;
 		gravityScale = 1.0f;
 	}
@@ -435,7 +435,7 @@ private:
 
 	int32 m_islandIndex;
 
-	b2Transform m_xf;		// the body origin transform
+	b2Transform m_xf;		// the body origin transform 保存了坐标和旋转角度
 	b2Sweep m_sweep;		// the swept motion for CCD
 
 	b2Vec2 m_linearVelocity;

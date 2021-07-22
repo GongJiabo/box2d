@@ -27,6 +27,7 @@
 // If you implement your own collision filter you may want to build from this implementation.
 bool b2ContactFilter::ShouldCollide(b2Fixture* fixtureA, b2Fixture* fixtureB)
 {
+    // 基于两个碰撞刚体的filter属性判断是进行碰撞模拟
 	const b2Filter& filterA = fixtureA->GetFilterData();
 	const b2Filter& filterB = fixtureB->GetFilterData();
 
@@ -34,7 +35,7 @@ bool b2ContactFilter::ShouldCollide(b2Fixture* fixtureA, b2Fixture* fixtureB)
 	{
 		return filterA.groupIndex > 0;
 	}
-
+    // 用mask位运算判断是否进行碰撞模拟？？？
 	bool collide = (filterA.maskBits & filterB.categoryBits) != 0 && (filterA.categoryBits & filterB.maskBits) != 0;
 	return collide;
 }

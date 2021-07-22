@@ -91,9 +91,9 @@ public:
 	/// @warning This function is locked during callbacks.
 	void DestroyJoint(b2Joint* joint);
 
-	/// Take a time step. This performs collision detection, integration,
+	/// Take a time step. This performs collision detection, integration,   碰撞检测 积分 约束解
 	/// and constraint solution.
-	/// @param timeStep the amount of time to simulate, this should not vary.
+	/// @param timeStep the amount of time to simulate, this should not vary.       每次更新计算之间经过的秒数（延迟）
 	/// @param velocityIterations for the velocity constraint solver.
 	/// @param positionIterations for the position constraint solver.
 	void Step(	float timeStep,
@@ -231,14 +231,14 @@ private:
 
 	b2ContactManager m_contactManager;
 
-	b2Body* m_bodyList;
+	b2Body* m_bodyList;             // 存储每个刚体的body！！！
 	b2Joint* m_jointList;
 
 	int32 m_bodyCount;
 	int32 m_jointCount;
 
-	b2Vec2 m_gravity;
-	bool m_allowSleep;
+	b2Vec2 m_gravity;               // 设置重力参数
+    bool m_allowSleep;              // 是否允许物体设置为睡眠状态（睡眠状态直接跳过 节省CPU开支）
 
 	b2DestructionListener* m_destructionListener;
 	b2Draw* m_debugDraw;
@@ -247,9 +247,9 @@ private:
 	// support a variable time step.
 	float m_inv_dt0;
 
-	bool m_newContacts;
-	bool m_locked;
-	bool m_clearForces;
+	bool m_newContacts;     // ???
+	bool m_locked;          // ???
+	bool m_clearForces;     
 
 	// These are for debugging the solver.
 	bool m_warmStarting;

@@ -59,7 +59,7 @@ struct B2_API b2ContactFeature
 union B2_API b2ContactID
 {
 	b2ContactFeature cf;
-	uint32 key;					///< Used to quickly compare contact ids.
+	uint32 key;					///< Used to quickly compare contact ids. 特征ID, 用于快速比较
 };
 
 /// A manifold point is a contact point belonging to a contact

@@ -78,7 +78,7 @@ public:
 	/// Cast a ray against a child shape.
 	/// @param output the ray-cast results.
 	/// @param input the ray-cast input parameters.
-	/// @param transform the transform to be applied to the shape.
+    /// @param transform the transform to be applied to the shape.
 	/// @param childIndex the child shape index
 	virtual bool RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
 						const b2Transform& transform, int32 childIndex) const = 0;

@@ -294,6 +294,7 @@ void Test::Step(Settings& settings)
 		m_textLine += m_textIncrement;
 	}
 
+    // 设置了需要显示的settings
 	uint32 flags = 0;
 	flags += settings.m_drawShapes * b2Draw::e_shapeBit;
 	flags += settings.m_drawJoints * b2Draw::e_jointBit;
@@ -307,7 +308,8 @@ void Test::Step(Settings& settings)
 	m_world->SetSubStepping(settings.m_enableSubStepping);
 
 	m_pointCount = 0;
-
+    
+    /* !!! core function !!! */
 	m_world->Step(timeStep, settings.m_velocityIterations, settings.m_positionIterations);
 
 	m_world->DebugDraw();
@@ -318,6 +320,7 @@ void Test::Step(Settings& settings)
 		++m_stepCount;
 	}
 
+    // 后续都是根据settings绘制
 	if (settings.m_drawStats)
 	{
 		int32 bodyCount = m_world->GetBodyCount();

@@ -47,7 +47,7 @@ public:
 	void Collide();
 
 	b2BroadPhase m_broadPhase;
-	b2Contact* m_contactList;
+	b2Contact* m_contactList;       // core members!!
 	int32 m_contactCount;
 	b2ContactFilter* m_contactFilter;
 	b2ContactListener* m_contactListener;

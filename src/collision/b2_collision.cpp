@@ -236,6 +236,7 @@ int32 b2ClipSegmentToLine(b2ClipVertex vOut[2], const b2ClipVertex vIn[2],
 	return count;
 }
 
+// 测试两个shape是否重叠
 bool b2TestOverlap(	const b2Shape* shapeA, int32 indexA,
 					const b2Shape* shapeB, int32 indexB,
 					const b2Transform& xfA, const b2Transform& xfB)

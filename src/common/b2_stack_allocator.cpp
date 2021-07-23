@@ -39,28 +39,37 @@ b2StackAllocator::~b2StackAllocator()
 
 void* b2StackAllocator::Allocate(int32 size)
 {
-	b2Assert(m_entryCount < b2_maxStackEntries);
-
-	b2StackEntry* entry = m_entries + m_entryCount;
-	entry->size = size;
-	if (m_index + size > b2_stackSize)
-	{
-		entry->data = (char*)b2Alloc(size);
-		entry->usedMalloc = true;
-	}
-	else
-	{
-		entry->data = m_data + m_index;
-		entry->usedMalloc = false;
-		m_index += size;
-	}
-
-	m_allocation += size;
-	m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
-	++m_entryCount;
-
-	return entry->data;
+    //验证栈中元素的有效性，防止内存溢出
+    b2Assert(m_entryCount < b2_maxStackEntries);
+    //获取栈实体头指针
+    b2StackEntry* entry = m_entries + m_entryCount;
+    //实体大小
+    entry->size = size;
+    //当内存池m_data已使用的大小加需要申请的大小大于内存池的总容量时，则在堆上申请
+    if (m_index + size > b2_stackSize)
+    {
+        //申请大小为size的内存，并标记是在堆上申请的
+        entry->data = (char*)b2Alloc(size);
+        entry->usedMalloc = true;
+    }
+    else
+    {
+        //从m_data中获取内存，并标记不是在堆上申请的
+        //同时修改m_index的值
+        entry->data = m_data + m_index;
+        entry->usedMalloc = false;
+        m_index += size;
+    }
+    //增加栈中的所有元素使用内存大小
+    m_allocation += size;
+    //修改内存容量的最大值
+    m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
+    //增加栈中元素的数量
+    ++m_entryCount;
+    //返回栈中元素的内存头指针
+    return entry->data;
 }
+
 
 void b2StackAllocator::Free(void* p)
 {

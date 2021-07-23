@@ -31,22 +31,26 @@ void b2CollideCircles(
 {
 	manifold->pointCount = 0;
 
+    // 获取新的圆心坐标
 	b2Vec2 pA = b2Mul(xfA, circleA->m_p);
 	b2Vec2 pB = b2Mul(xfB, circleB->m_p);
 
+    // 两个圆心的向量
 	b2Vec2 d = pB - pA;
-	float distSqr = b2Dot(d, d);
+	float distSqr = b2Dot(d, d);        // 圆心距离
 	float rA = circleA->m_radius, rB = circleB->m_radius;
-	float radius = rA + rB;
+	float radius = rA + rB;             // 半径和
+    // 如果圆心距离大于半径和 没有碰撞 返回
 	if (distSqr > radius * radius)
 	{
 		return;
 	}
-
+    
+    // 设置返回流体的属性
 	manifold->type = b2Manifold::e_circles;
-	manifold->localPoint = circleA->m_p;
-	manifold->localNormal.SetZero();
-	manifold->pointCount = 1;
+	manifold->localPoint = circleA->m_p;        // 圆A的圆心位置???
+	manifold->localNormal.SetZero();            // 法向量置0
+	manifold->pointCount = 1;                   // 流形点置1
 
 	manifold->points[0].localPoint = circleB->m_p;
 	manifold->points[0].id.key = 0;
@@ -60,19 +64,22 @@ void b2CollidePolygonAndCircle(
 	manifold->pointCount = 0;
 
 	// Compute circle position in the frame of the polygon.
-	b2Vec2 c = b2Mul(xfB, circleB->m_p);
-	b2Vec2 cLocal = b2MulT(xfA, c);
+	b2Vec2 c = b2Mul(xfB, circleB->m_p);        // 变换后圆心B的位置
+	b2Vec2 cLocal = b2MulT(xfA, c);             // 将圆心用多边形变换矩阵的逆变换到多边形原坐标系下
 
 	// Find the min separating edge.
+    // 找到距离圆心最近的边
 	int32 normalIndex = 0;
 	float separation = -b2_maxFloat;
-	float radius = polygonA->m_radius + circleB->m_radius;
+    // 多边形的m_radius是外边一层skin（类似统一向外扩展了一层, 用于提高碰撞检测的效率）
+	float radius = polygonA->m_radius + circleB->m_radius;  // 半径和
 	int32 vertexCount = polygonA->m_count;
 	const b2Vec2* vertices = polygonA->m_vertices;
 	const b2Vec2* normals = polygonA->m_normals;
 
 	for (int32 i = 0; i < vertexCount; ++i)
 	{
+        // 圆心->多边形顶点的向量在 该顶点法线 上的投影（存储顶点的时候是逆时针的）
 		float s = b2Dot(normals[i], cLocal - vertices[i]);
 
 		if (s > radius)
@@ -93,10 +100,11 @@ void b2CollidePolygonAndCircle(
 	int32 vertIndex2 = vertIndex1 + 1 < vertexCount ? vertIndex1 + 1 : 0;
 	b2Vec2 v1 = vertices[vertIndex1];
 	b2Vec2 v2 = vertices[vertIndex2];
-
 	// If the center is inside the polygon ...
+    // 圆心在多边形内
 	if (separation < b2_epsilon)
 	{
+        // 设置流形属性并返回
 		manifold->pointCount = 1;
 		manifold->type = b2Manifold::e_faceA;
 		manifold->localNormal = normals[normalIndex];

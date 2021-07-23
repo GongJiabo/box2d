@@ -40,6 +40,7 @@ void b2PolygonShape::SetAsBox(float hx, float hy)
 	m_vertices[1].Set( hx, -hy);
 	m_vertices[2].Set( hx,  hy);
 	m_vertices[3].Set(-hx,  hy);
+    // 法向量定义
 	m_normals[0].Set(0.0f, -1.0f);
 	m_normals[1].Set(1.0f, 0.0f);
 	m_normals[2].Set(0.0f, 1.0f);

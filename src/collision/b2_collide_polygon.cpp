@@ -116,7 +116,7 @@ static void b2FindIncidentEdge(b2ClipVertex c[2],
 // Find incident edge
 // Clip
 
-// The normal points from 1 to 2
+// The normal points from 1 to 2    // 分离轴算法
 void b2CollidePolygons(b2Manifold* manifold,
 					  const b2PolygonShape* polyA, const b2Transform& xfA,
 					  const b2PolygonShape* polyB, const b2Transform& xfB)

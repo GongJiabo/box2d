@@ -65,7 +65,7 @@ public:
 	/// These are the edge vertices
 	b2Vec2 m_vertex1, m_vertex2;
 
-	/// Optional adjacent vertices. These are used for smooth collision.
+	/// Optional adjacent vertices. These are used for smooth collision.   ghost vertices用于避免tunneling
 	b2Vec2 m_vertex0, m_vertex3;
 
 	/// Uses m_vertex0 and m_vertex3 to create smooth collision.

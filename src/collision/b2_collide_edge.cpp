@@ -35,43 +35,52 @@ void b2CollideEdgeAndCircle(b2Manifold* manifold,
 	manifold->pointCount = 0;
 	
 	// Compute circle in frame of edge
+    // 边缘形状坐标系下圆心B的坐标
 	b2Vec2 Q = b2MulT(xfA, b2Mul(xfB, circleB->m_p));
 	
 	b2Vec2 A = edgeA->m_vertex1, B = edgeA->m_vertex2;
 	b2Vec2 e = B - A;
 	
 	// Normal points to the right for a CCW winding
+    // 顺时针旋转90度的法向量n
+
 	b2Vec2 n(e.y, -e.x);
 	float offset = b2Dot(n, Q - A);
 
+    // 是否只能一边参加碰撞？
 	bool oneSided = edgeA->m_oneSided;
 	if (oneSided && offset < 0.0f)
 	{
 		return;
 	}
 
-	// Barycentric coordinates
+	// Barycentric coordinates 重心坐标
+    // 点乘 向量AB 和 两个端点与圆心Q组成的向量
+    // 结果可以判断两个向量组成的夹角大小，从而判断哪个点离圆更近
 	float u = b2Dot(e, B - Q);
 	float v = b2Dot(e, Q - A);
-	
+	// 获取圆与边缘形状的半径和
 	float radius = edgeA->m_radius + circleB->m_radius;
-	
+	// 声明接触特征并初始化
 	b2ContactFeature cf;
 	cf.indexB = 0;
 	cf.typeB = b2ContactFeature::e_vertex;
 	
-	// Region A
+	// Region 即A离圆更近
 	if (v <= 0.0f)
 	{
 		b2Vec2 P = A;
+        // 获取A点到圆的距离
 		b2Vec2 d = Q - P;
 		float dd = b2Dot(d, d);
+        // 距离大于两形状的半径和 则没有碰撞
 		if (dd > radius * radius)
 		{
 			return;
 		}
 		
 		// Is there an edge connected to A?
+        // 这里的边是否连接A，即在A的头部还有个辅助点
 		if (edgeA->m_oneSided)
 		{
 			b2Vec2 A1 = edgeA->m_vertex0;
@@ -80,12 +89,14 @@ void b2CollideEdgeAndCircle(b2Manifold* manifold,
 			float u1 = b2Dot(e1, B1 - Q);
 			
 			// Is the circle in Region AB of the previous edge?
+            // 圆是否在前一个边的AB区域
 			if (u1 > 0.0f)
 			{
 				return;
 			}
 		}
 		
+        // 设置流形相关的信息
 		cf.indexA = 0;
 		cf.typeA = b2ContactFeature::e_vertex;
 		manifold->pointCount = 1;
@@ -98,7 +109,7 @@ void b2CollideEdgeAndCircle(b2Manifold* manifold,
 		return;
 	}
 	
-	// Region B
+	// Region B 即B点离圆更近
 	if (u <= 0.0f)
 	{
 		b2Vec2 P = B;
@@ -136,7 +147,8 @@ void b2CollideEdgeAndCircle(b2Manifold* manifold,
 		return;
 	}
 	
-	// Region AB
+	// Region AB 区域AB，即AB两顶点到圆心的距离相等
+    // 获取等分点p，再计算p的长度，与半间比较
 	float den = b2Dot(e, e);
 	b2Assert(den > 0.0f);
 	b2Vec2 P = (1.0f / den) * (u * A + v * B);

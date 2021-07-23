@@ -26,14 +26,17 @@
 #include "b2_api.h"
 #include "b2_settings.h"
 
+// 栈内存池的大小 100KB
 const int32 b2_stackSize = 100 * 1024;	// 100k
+// 栈元素的最大数量
 const int32 b2_maxStackEntries = 32;
 
+// 栈实体定义
 struct B2_API b2StackEntry
 {
-	char* data;
-	int32 size;
-	bool usedMalloc;
+	char* data;        // 头指针
+	int32 size;        // 大小
+	bool usedMalloc;   // 是否使用
 };
 
 // This is a stack allocator used for fast per step allocations.
@@ -52,13 +55,18 @@ public:
 
 private:
 
+    // 栈的内存池，用于栈子节点的内存开辟
 	char m_data[b2_stackSize];
+    // 在栈的内存池中，已使用的内存大小
 	int32 m_index;
-
+    // 栈中所有元素使用内存大小
 	int32 m_allocation;
+    // 占中的所有元素[不管现在是否出栈]使用的内存容量
+    // 注意该变量在对象销毁之前只增不减
 	int32 m_maxAllocation;
-
+    // 栈实体的数组
 	b2StackEntry m_entries[b2_maxStackEntries];
+    // 栈中元素的数量
 	int32 m_entryCount;
 };
 

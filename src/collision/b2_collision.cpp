@@ -23,28 +23,33 @@
 #include "box2d/b2_collision.h"
 #include "box2d/b2_distance.h"
 
+// 根据流行和提供的变换初始化结构体
 void b2WorldManifold::Initialize(const b2Manifold* manifold,
 						  const b2Transform& xfA, float radiusA,
 						  const b2Transform& xfB, float radiusB)
 {
+    // 判断流形的点
 	if (manifold->pointCount == 0)
 	{
 		return;
 	}
 
+    // 获取流形的类型
 	switch (manifold->type)
 	{
 	case b2Manifold::e_circles:
 		{
+            // 设置法向量
 			normal.Set(1.0f, 0.0f);
 			b2Vec2 pointA = b2Mul(xfA, manifold->localPoint);
 			b2Vec2 pointB = b2Mul(xfB, manifold->points[0].localPoint);
+            // 判断亮点是否重合
 			if (b2DistanceSquared(pointA, pointB) > b2_epsilon * b2_epsilon)
 			{
 				normal = pointB - pointA;
 				normal.Normalize();
 			}
-
+            // 获取世界接触点
 			b2Vec2 cA = pointA + radiusA * normal;
 			b2Vec2 cB = pointB - radiusB * normal;
 			points[0] = 0.5f * (cA + cB);
@@ -83,12 +88,14 @@ void b2WorldManifold::Initialize(const b2Manifold* manifold,
 			}
 
 			// Ensure normal points from A to B.
+            // 保证法向量的顶点时A到B的
 			normal = -normal;
 		}
 		break;
 	}
 }
 
+// 通过给定的两个流行计算点的状态
 void b2GetPointStates(b2PointState state1[b2_maxManifoldPoints], b2PointState state2[b2_maxManifoldPoints],
 					  const b2Manifold* manifold1, const b2Manifold* manifold2)
 {
@@ -134,6 +141,7 @@ void b2GetPointStates(b2PointState state1[b2_maxManifoldPoints], b2PointState st
 }
 
 // From Real-time Collision Detection, p179.
+// 光线投射
 bool b2AABB::RayCast(b2RayCastOutput* output, const b2RayCastInput& input) const
 {
 	float tmin = -b2_maxFloat;

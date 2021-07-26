@@ -85,6 +85,8 @@ struct B2_API b2ContactEdge
 /// The class manages contact between two shapes. A contact exists for each overlapping
 /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
 /// that has no contact points.
+/// b2Contact对象包含了碰撞的信息，从对象中可以得知哪两个定制器发生了碰撞，以及碰撞的位置和碰撞之后的反作用方向
+/// 在Box2D中有两个方法可以获取b2Contact对象，一个是遍历接触(contacts)链表每一个物体，另外一种方法是用接触监听器(contact listener)
 class B2_API b2Contact
 {
 public:
@@ -208,6 +210,7 @@ protected:
 	b2Contact(b2Fixture* fixtureA, int32 indexA, b2Fixture* fixtureB, int32 indexB);
 	virtual ~b2Contact() {}
 
+    // fixture定制器开始重叠
 	void Update(b2ContactListener* listener);
 
 	static b2ContactRegister s_registers[b2Shape::e_typeCount][b2Shape::e_typeCount];

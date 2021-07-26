@@ -38,6 +38,8 @@ public:
 	b2ContactManager();
 
 	// Broad-phase callback.
+    // AABB框开始重叠(fixture自身并没有发生重叠，但此时相关物体的b2Contact对象被创建并添加到接触链表中)
+    // 结果: 接触对象存在与接触链表中，但IsTouching()返回false
 	void AddPair(void* proxyUserDataA, void* proxyUserDataB);
 
 	void FindNewContacts();

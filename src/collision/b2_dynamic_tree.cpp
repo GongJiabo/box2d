@@ -28,15 +28,18 @@ b2DynamicTree::b2DynamicTree()
 
 	m_nodeCapacity = 16;
 	m_nodeCount = 0;
+    // 申请一块内存，创建m_nodeCapacity子节点，并清空内存中的内容（不是在自己定义的SOA上实现）
 	m_nodes = (b2TreeNode*)b2Alloc(m_nodeCapacity * sizeof(b2TreeNode));
 	memset(m_nodes, 0, m_nodeCapacity * sizeof(b2TreeNode));
 
 	// Build a linked list for the free list.
+    // 创建一个空闲链表
 	for (int32 i = 0; i < m_nodeCapacity - 1; ++i)
 	{
 		m_nodes[i].next = i + 1;
 		m_nodes[i].height = -1;
 	}
+    // 链表的最后一个字节点和孩子指针、高度都置为初始值
 	m_nodes[m_nodeCapacity-1].next = b2_nullNode;
 	m_nodes[m_nodeCapacity-1].height = -1;
 	m_freeList = 0;
@@ -51,6 +54,7 @@ b2DynamicTree::~b2DynamicTree()
 }
 
 // Allocate a node from the pool. Grow the pool if necessary.
+// 从内存池中申请余个节点，如果必要增大内存池
 int32 b2DynamicTree::AllocateNode()
 {
 	// Expand the node pool as needed.
@@ -67,6 +71,7 @@ int32 b2DynamicTree::AllocateNode()
 
 		// Build a linked list for the free list. The parent
 		// pointer becomes the "next" pointer.
+        // 创建一个空闲链表，父节点成为下一个指针
 		for (int32 i = m_nodeCount; i < m_nodeCapacity - 1; ++i)
 		{
 			m_nodes[i].next = i + 1;
@@ -78,6 +83,8 @@ int32 b2DynamicTree::AllocateNode()
 	}
 
 	// Peel a node off the free list.
+    // 从空闲链表中去下一个节点，初始化该节点，
+    // 同时将空闲链表头指针m_freeList指向下一个(并没有给新节点分配数据)
 	int32 nodeId = m_freeList;
 	m_freeList = m_nodes[nodeId].next;
 	m_nodes[nodeId].parent = b2_nullNode;
@@ -86,11 +93,13 @@ int32 b2DynamicTree::AllocateNode()
 	m_nodes[nodeId].height = 0;
 	m_nodes[nodeId].userData = nullptr;
 	m_nodes[nodeId].moved = false;
+    // 增加节点数量
 	++m_nodeCount;
 	return nodeId;
 }
 
 // Return a node to the pool.
+// 从内存池中申请一个节点，根据nodeid将一个节点内存返回到内存池中
 void b2DynamicTree::FreeNode(int32 nodeId)
 {
 	b2Assert(0 <= nodeId && nodeId < m_nodeCapacity);
@@ -103,24 +112,28 @@ void b2DynamicTree::FreeNode(int32 nodeId)
 
 // Create a proxy in the tree as a leaf node. We return the index
 // of the node instead of a pointer so that we can grow
-// the node pool.
+// the node pool. 在树上创建一个叶子节点代理
 int32 b2DynamicTree::CreateProxy(const b2AABB& aabb, void* userData)
 {
+    // 申请代理节点id
 	int32 proxyId = AllocateNode();
 
 	// Fatten the aabb.
+    // 填充aabb，为节点赋值
 	b2Vec2 r(b2_aabbExtension, b2_aabbExtension);
+    // 保存fattenAABB
 	m_nodes[proxyId].aabb.lowerBound = aabb.lowerBound - r;
 	m_nodes[proxyId].aabb.upperBound = aabb.upperBound + r;
 	m_nodes[proxyId].userData = userData;
 	m_nodes[proxyId].height = 0;
 	m_nodes[proxyId].moved = true;
-
+    // 插入叶子节点
 	InsertLeaf(proxyId);
 
 	return proxyId;
 }
 
+// 销毁叶子节点代理
 void b2DynamicTree::DestroyProxy(int32 proxyId)
 {
 	b2Assert(0 <= proxyId && proxyId < m_nodeCapacity);
@@ -130,21 +143,24 @@ void b2DynamicTree::DestroyProxy(int32 proxyId)
 	FreeNode(proxyId);
 }
 
+// 移动叶子代理
 bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& displacement)
 {
+    // 验证proxyid的有效性
 	b2Assert(0 <= proxyId && proxyId < m_nodeCapacity);
-
+    // 验证是否是叶子节点
 	b2Assert(m_nodes[proxyId].IsLeaf());
 
-	// Extend AABB
+	// Extend AABB 扩大aabb
 	b2AABB fatAABB;
 	b2Vec2 r(b2_aabbExtension, b2_aabbExtension);
 	fatAABB.lowerBound = aabb.lowerBound - r;
 	fatAABB.upperBound = aabb.upperBound + r;
 
-	// Predict AABB movement
+	// Predict AABB movement 预测aabb的位移
 	b2Vec2 d = b2_aabbMultiplier * displacement;
 
+    // 扩大下限
 	if (d.x < 0.0f)
 	{
 		fatAABB.lowerBound.x += d.x;
@@ -163,6 +179,7 @@ bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& d
 		fatAABB.upperBound.y += d.y;
 	}
 
+    // 如果原来节点的aabb包含了移动后的aabb(缩小了)
 	const b2AABB& treeAABB = m_nodes[proxyId].aabb;
 	if (treeAABB.Contains(aabb))
 	{
@@ -172,7 +189,7 @@ bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& d
 		b2AABB hugeAABB;
 		hugeAABB.lowerBound = fatAABB.lowerBound - 4.0f * r;
 		hugeAABB.upperBound = fatAABB.upperBound + 4.0f * r;
-
+        // 将新aabb且fatten后，并扩展了一圈，如果还宝包含则返回false
 		if (hugeAABB.Contains(treeAABB))
 		{
 			// The tree AABB contains the object AABB and the tree AABB is
@@ -184,9 +201,9 @@ bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& d
 	}
 
 	RemoveLeaf(proxyId);
-
+    // 重新设置aabb
 	m_nodes[proxyId].aabb = fatAABB;
-
+    // 插入叶子节点
 	InsertLeaf(proxyId);
 
 	m_nodes[proxyId].moved = true;
@@ -194,10 +211,15 @@ bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& d
 	return true;
 }
 
+//　box2d是采用surface area heuristic 划分场景的。 虽然采用的是getperimter, 获取aabb的周长，然后计算代价。
+// 但可以从变量名上可以找到area, totalarea，newarea,oldarea. 这可能是因为采用周长的代价更低的原因。
+// 插入思路如下：计算左右子树的代价，选择代价低的节点，如果此节点是叶子节点，将新节点插入。 如果不是，重复此步操作。
+// 尽量保证每个子树内aabb的周长接近
 void b2DynamicTree::InsertLeaf(int32 leaf)
 {
+    // 插入叶子节点总数自增
 	++m_insertionCount;
-
+    // 判断该树是否为空
 	if (m_root == b2_nullNode)
 	{
 		m_root = leaf;
@@ -206,26 +228,31 @@ void b2DynamicTree::InsertLeaf(int32 leaf)
 	}
 
 	// Find the best sibling for this node
+    // 为该节点找到最好的兄弟姐妹节点
+    // 获取leaf的aabb
 	b2AABB leafAABB = m_nodes[leaf].aabb;
 	int32 index = m_root;
+    // a) 通过遍历树上的节点，对比aabb找到代价最小的节点A
 	while (m_nodes[index].IsLeaf() == false)
 	{
 		int32 child1 = m_nodes[index].child1;
 		int32 child2 = m_nodes[index].child2;
-
+        // 获取当前index节点的aabb周长
 		float area = m_nodes[index].aabb.GetPerimeter();
-
+        // 获取插入的leaf节点和index节点的aabb和
 		b2AABB combinedAABB;
 		combinedAABB.Combine(m_nodes[index].aabb, leafAABB);
 		float combinedArea = combinedAABB.GetPerimeter();
 
 		// Cost of creating a new parent for this node and the new leaf
+        // 为该节点创建一个父新的父节点（一个新叶子节点）的代价
 		float cost = 2.0f * combinedArea;
 
 		// Minimum cost of pushing the leaf further down the tree
+        // 把leaf往树的下一层插入的最小cost
 		float inheritanceCost = 2.0f * (combinedArea - area);
 
-		// Cost of descending into child1
+		// Cost of descending into child1 把叶子节点降级到child1的cost
 		float cost1;
 		if (m_nodes[child1].IsLeaf())
 		{
@@ -235,14 +262,15 @@ void b2DynamicTree::InsertLeaf(int32 leaf)
 		}
 		else
 		{
+            // 当前index节点的child1节点不是叶子节点时
 			b2AABB aabb;
 			aabb.Combine(leafAABB, m_nodes[child1].aabb);
 			float oldArea = m_nodes[child1].aabb.GetPerimeter();
-			float newArea = aabb.GetPerimeter();
+			float newArea = aabb.GetPerimeter();        // 相比child1是叶子节点的时候cost减去了m_nodes[child1]的aabb周长
 			cost1 = (newArea - oldArea) + inheritanceCost;
 		}
 
-		// Cost of descending into child2
+		// Cost of descending into child2 把叶子节点降级到child2的cost
 		float cost2;
 		if (m_nodes[child2].IsLeaf())
 		{
@@ -276,9 +304,11 @@ void b2DynamicTree::InsertLeaf(int32 leaf)
 		}
 	}
 
+    // b) 将A作为兄弟节点，先建一个父节点N，将A的父节点的孩子指针指向N，同时N将A和要插入的叶子节点L作为左右孩子节点连接起来
+    // Quote: https://blog.csdn.net/cg0206/article/details/8293049
 	int32 sibling = index;
 
-	// Create a new parent.
+	// Create a new parent. 创建一个新的父节点并初始化
 	int32 oldParent = m_nodes[sibling].parent;
 	int32 newParent = AllocateNode();
 	m_nodes[newParent].parent = oldParent;
@@ -288,7 +318,7 @@ void b2DynamicTree::InsertLeaf(int32 leaf)
 
 	if (oldParent != b2_nullNode)
 	{
-		// The sibling was not the root.
+		// The sibling was not the root. 兄弟节点不是根节点
 		if (m_nodes[oldParent].child1 == sibling)
 		{
 			m_nodes[oldParent].child1 = newParent;
@@ -305,7 +335,7 @@ void b2DynamicTree::InsertLeaf(int32 leaf)
 	}
 	else
 	{
-		// The sibling was the root.
+		// The sibling was the root. 兄弟节点是跟节点
 		m_nodes[newParent].child1 = sibling;
 		m_nodes[newParent].child2 = leaf;
 		m_nodes[sibling].parent = newParent;
@@ -314,37 +344,48 @@ void b2DynamicTree::InsertLeaf(int32 leaf)
 	}
 
 	// Walk back up the tree fixing heights and AABBs
+    // 向后走修复树的高度和aabb
+    // c) 如果出现树不平衡，旋转动态树，使它成为新的平衡二叉树
 	index = m_nodes[leaf].parent;
 	while (index != b2_nullNode)
 	{
+        // 平衡
 		index = Balance(index);
-
+        // 左右孩子节点
 		int32 child1 = m_nodes[index].child1;
 		int32 child2 = m_nodes[index].child2;
 
 		b2Assert(child1 != b2_nullNode);
 		b2Assert(child2 != b2_nullNode);
-
+        // 获取高度和aabb
 		m_nodes[index].height = 1 + b2Max(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb.Combine(m_nodes[child1].aabb, m_nodes[child2].aabb);
-
+        // 获取parent节点
 		index = m_nodes[index].parent;
 	}
 
 	//Validate();
 }
 
+// 关于删除函数，主要步骤是：
+// a)、根据索引找到父节点、祖父节点、和兄弟节点
+// b)、将祖父节点的原本指向父节点的孩子指针指向兄弟节点，并释放父亲节点
+// c)、如果出现树不平衡，旋转动态树，使它成为新的平衡二叉树。
+// 还要注意一点的就是我们插入的有用的信息都是叶子节点，剩下的节点全部都是辅助节点
+// ----- 与树的旋转有关 ------ //
 void b2DynamicTree::RemoveLeaf(int32 leaf)
 {
+    // leaf是根节点 只有该一个节点
 	if (leaf == m_root)
 	{
 		m_root = b2_nullNode;
 		return;
 	}
-
+    // 获取A的父节点和祖父节点
 	int32 parent = m_nodes[leaf].parent;
 	int32 grandParent = m_nodes[parent].parent;
 	int32 sibling;
+    // 寻找兄弟节点
 	if (m_nodes[parent].child1 == leaf)
 	{
 		sibling = m_nodes[parent].child2;
@@ -353,10 +394,12 @@ void b2DynamicTree::RemoveLeaf(int32 leaf)
 	{
 		sibling = m_nodes[parent].child1;
 	}
-
+    
+    // 如果祖父节点不为空，即父节点不是跟节点
 	if (grandParent != b2_nullNode)
 	{
 		// Destroy parent and connect sibling to grandParent.
+        // 销毁父节点并将兄弟节点连接到祖父节点中(兄弟节点作为祖父节点的原父节点对应的child)
 		if (m_nodes[grandParent].child1 == parent)
 		{
 			m_nodes[grandParent].child1 = sibling;
@@ -365,24 +408,28 @@ void b2DynamicTree::RemoveLeaf(int32 leaf)
 		{
 			m_nodes[grandParent].child2 = sibling;
 		}
+        // 将兄弟节点的父节点设置为祖父节点
 		m_nodes[sibling].parent = grandParent;
+        // 释放父节点的空间到空闲内存池
 		FreeNode(parent);
 
-		// Adjust ancestor bounds.
+		// Adjust ancestor bounds.  调整祖父界限
 		int32 index = grandParent;
 		while (index != b2_nullNode)
 		{
+            // 平衡
 			index = Balance(index);
-
+            // 获取左右孩子
 			int32 child1 = m_nodes[index].child1;
 			int32 child2 = m_nodes[index].child2;
-
+            // 合并aabb并获取高度
 			m_nodes[index].aabb.Combine(m_nodes[child1].aabb, m_nodes[child2].aabb);
 			m_nodes[index].height = 1 + b2Max(m_nodes[child1].height, m_nodes[child2].height);
-
+            // 更新index
 			index = m_nodes[index].parent;
 		}
 	}
+    //  如果祖父节点为空，即父节点为根节点，将兄弟节点置为根节点
 	else
 	{
 		m_root = sibling;
@@ -395,6 +442,10 @@ void b2DynamicTree::RemoveLeaf(int32 leaf)
 
 // Perform a left or right rotation if node A is imbalanced.
 // Returns the new root index.
+// 如果子树A不平衡，则执行一个向左或向右旋转， 具体步骤：
+//a) 获取当前节点的两个孩子节点，比对孩子子树B、C的高度，求的高度差b
+//b) 若b不在[-1,1]之间，则上旋孩子子树较高的（这里假设是B），将父节点作为子树B的一个孩子，同时树的根节点指针m_root指向B节点
+//c) 然后在B子树上进行a、b操作，直到叶子节点。同时返回新的根节点
 int32 b2DynamicTree::Balance(int32 iA)
 {
 	b2Assert(iA != b2_nullNode);
@@ -714,6 +765,12 @@ int32 b2DynamicTree::GetMaxBalance() const
 	return maxBalance;
 }
 
+// 重新构建一棵树
+// a) 获取所有叶子节点放入动态数组中，其他释放到叶子节点内存池中
+// b) 获取所有叶子节点中aabb最小的两个，申请一个节点，作为它们的父节点，形成一个新的子树
+// c) 用动态数组最后一个节点覆盖最小aabb的节点，用父节点放入动态数组aabb第二小的位置上。同时将动态数组中的节点个数减少一个
+// d) 重复a、b、c步骤，直到动态数组中的节点个数为1个
+// e) 获取头指针
 void b2DynamicTree::RebuildBottomUp()
 {
 	int32* nodes = (int32*)b2Alloc(m_nodeCount * sizeof(int32));

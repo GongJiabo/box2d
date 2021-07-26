@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// 代码分析Quote: https://blog.csdn.net/cg0206/article/details/8293049
+
 #ifndef B2_DYNAMIC_TREE_H
 #define B2_DYNAMIC_TREE_H
 
@@ -27,31 +29,41 @@
 #include "b2_collision.h"
 #include "b2_growable_stack.h"
 
+// 定义空节点
 #define b2_nullNode (-1)
 
 /// A node in the dynamic tree. The client does not interact with this directly.
+/// 一个动态树的子结点，不与外包客户直接交互
 struct B2_API b2TreeNode
 {
+    // 是否是叶子结点
 	bool IsLeaf() const
 	{
 		return child1 == b2_nullNode;
 	}
 
 	/// Enlarged AABB
+    /// 增大aabb变量
 	b2AABB aabb;
 
+    /// 用户数据
 	void* userData;
 
+    /// 父节点指针(索引)或孩子节点指针(索引)
+    /// 因为此动态树是申请一块大的连续的空间，即含有n个元素的动态数组罢了
+    /// 故用动态数组的索引值来模拟指针。为了统一，我们一下均使用指针
 	union
 	{
 		int32 parent;
 		int32 next;
 	};
 
+    // 左右孩子指针(索引)
 	int32 child1;
 	int32 child2;
 
 	// leaf = 0, free node = -1
+    // 高度 叶子高度为0 空闲结点高度为-1
 	int32 height;
 
 	bool moved;
@@ -65,6 +77,12 @@ struct B2_API b2TreeNode
 /// object to move by small amounts without triggering a tree update.
 ///
 /// Nodes are pooled and relocatable, so we use node indices rather than pointers.
+///
+/// 动态AABB树broad-phase,灵感来自于Nathanael Presson's btDbvt.
+/// 一个动态树排列一个二叉树的数据来加速查询像体积查询和光线投射。叶子是若干个代理和轴对齐包围盒
+/// 在树上我们用b2_fatAABBFactor扩展了aabb代理，这样aabb代理将比客户端对象大。
+/// 这样允许客户端少量移动而不需更新一个树
+/// 节点是汇集和浮动的，所以我们使用节点索引而不是指针
 class B2_API b2DynamicTree
 {
 public:
@@ -75,19 +93,24 @@ public:
 	~b2DynamicTree();
 
 	/// Create a proxy. Provide a tight fitting AABB and a userData pointer.
+    ///在树上创建一个叶子节点代理
 	int32 CreateProxy(const b2AABB& aabb, void* userData);
 
 	/// Destroy a proxy. This asserts if the id is invalid.
+    /// 销毁一个代理，如果id无效则断言
 	void DestroyProxy(int32 proxyId);
 
 	/// Move a proxy with a swepted AABB. If the proxy has moved outside of its fattened AABB,
 	/// then the proxy is removed from the tree and re-inserted. Otherwise
 	/// the function returns immediately.
 	/// @return true if the proxy was re-inserted.
+    /// 移动一个代理并扫描AABB，如果代理移除了使其fatterned_AABB盒子
+    /// 代理将会从树上移除并重新插入，否则函数立即返回(移动并删除原节点再重新插入)
 	bool MoveProxy(int32 proxyId, const b2AABB& aabb1, const b2Vec2& displacement);
 
 	/// Get proxy user data.
 	/// @return the proxy user data or 0 if the id is invalid.
+    /// 获取一个代理的userData
 	void* GetUserData(int32 proxyId) const;
 
 	bool WasMoved(int32 proxyId) const;
@@ -98,6 +121,12 @@ public:
 
 	/// Query an AABB for overlapping proxies. The callback class
 	/// is called for each proxy that overlaps the supplied AABB.
+    /**************************************************************************
+    * 功能描述：查询一个aabb重叠代理，每个重叠提供AABB的代理都将回调回调类
+    * 参数说明：callback ：回调对象
+                aabb     ：要查询的aabb
+    * 返 回 值：aabb对象
+    ***************************************************************************/
 	template <typename T>
 	void Query(T* callback, const b2AABB& aabb) const;
 
@@ -108,6 +137,14 @@ public:
 	/// number of proxies in the tree.
 	/// @param input the ray-cast input data. The ray extends from p1 to p1 + maxFraction * (p2 - p1).
 	/// @param callback a callback class that is called for each proxy that is hit by the ray.
+    /**************************************************************************
+     * 功能描述：光线投射到树上的每个代理上。
+               这依赖于回调去执行一个精确的光线投射到一个包含形状的代理上
+               这个回调也执行任何碰撞过滤。性能几乎等于k * log(n),其中k是碰撞的次数，n是树上代理的数量
+     * 参数说明：callback ：回调对象类，将会被每一个被光线照到的代理调用
+                input    ：光线投射输入数据，光线从 p1 + maxFraction * (p2 - p1)
+     * 返 回 值：(void)
+    ***************************************************************************/
 	template <typename T>
 	void RayCast(T* callback, const b2RayCastInput& input) const;
 
@@ -120,12 +157,15 @@ public:
 
 	/// Get the maximum balance of an node in the tree. The balance is the difference
 	/// in height of the two children of a node.
+    /// 在树上获得节点之间最大的平衡。平衡是两个孩子节点最大的高度差
 	int32 GetMaxBalance() const;
 
 	/// Get the ratio of the sum of the node areas to the root area.
+    /// 获得节点总数面积之和根面积的比
 	float GetAreaRatio() const;
 
 	/// Build an optimal tree. Very expensive. For testing.
+    /// 构建一个最优的树，非常昂贵，用于测试
 	void RebuildBottomUp();
 
 	/// Shift the world origin. Useful for large worlds.
@@ -135,12 +175,15 @@ public:
 
 private:
 
+    // 从内存吃中申请一个节点 如果必要增大内存池
 	int32 AllocateNode();
+    // 释放节点
 	void FreeNode(int32 node);
 
 	void InsertLeaf(int32 node);
 	void RemoveLeaf(int32 node);
 
+    // 如果子树index不平衡，则执行一个向左或向右旋转，返回新的子树根指针
 	int32 Balance(int32 index);
 
 	int32 ComputeHeight() const;
@@ -149,17 +192,22 @@ private:
 	void ValidateStructure(int32 index) const;
 	void ValidateMetrics(int32 index) const;
 
+    // 树的根指针(也是索引)
 	int32 m_root;
 
+    // 树的真正的头指针，也是一块连续的内存池的首地址
 	b2TreeNode* m_nodes;
+    // 树节点的个数
 	int32 m_nodeCount;
+    // 内存池中节点的总个数
 	int32 m_nodeCapacity;
-
+    // 空闲链表指针
 	int32 m_freeList;
-
+    // 记录插入节点总数量
 	int32 m_insertionCount;
 };
 
+// 根据代理id获取userData
 inline void* b2DynamicTree::GetUserData(int32 proxyId) const
 {
 	b2Assert(0 <= proxyId && proxyId < m_nodeCapacity);
@@ -184,26 +232,32 @@ inline const b2AABB& b2DynamicTree::GetFatAABB(int32 proxyId) const
 	return m_nodes[proxyId].aabb;
 }
 
+// 查询一个aabb重叠代理，每个重叠提供aabb的代理都将回调回调类
 template <typename T>
 inline void b2DynamicTree::Query(T* callback, const b2AABB& aabb) const
 {
+    // 申请临时栈，根节点进栈
 	b2GrowableStack<int32, 256> stack;
 	stack.Push(m_root);
-
+    // 判断栈的个数
 	while (stack.GetCount() > 0)
 	{
+        // 获取节点的id
 		int32 nodeId = stack.Pop();
 		if (nodeId == b2_nullNode)
 		{
+            // 节点内存池中的空闲节点
 			continue;
 		}
-
+        // 获取节点
 		const b2TreeNode* node = m_nodes + nodeId;
-
+        // 测试重叠
 		if (b2TestOverlap(node->aabb, aabb))
 		{
+            // 重叠且为叶子节点
 			if (node->IsLeaf())
 			{
+                // 回调是否成功, nodeId为所查询的aabb在m_nodes中的位置
 				bool proceed = callback->QueryCallback(nodeId);
 				if (proceed == false)
 				{
@@ -212,6 +266,7 @@ inline void b2DynamicTree::Query(T* callback, const b2AABB& aabb) const
 			}
 			else
 			{
+                // 左右孩子进栈
 				stack.Push(node->child1);
 				stack.Push(node->child2);
 			}
@@ -219,6 +274,7 @@ inline void b2DynamicTree::Query(T* callback, const b2AABB& aabb) const
 	}
 }
 
+// 光线投射
 template <typename T>
 inline void b2DynamicTree::RayCast(T* callback, const b2RayCastInput& input) const
 {
@@ -280,6 +336,7 @@ inline void b2DynamicTree::RayCast(T* callback, const b2RayCastInput& input) con
 			subInput.p2 = input.p2;
 			subInput.maxFraction = maxFraction;
 
+            // 回调光线投射函数(找到光线投射到的叶子节点计算，返回光线传播的范围)
 			float value = callback->RayCastCallback(subInput, nodeId);
 
 			if (value == 0.0f)

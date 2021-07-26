@@ -362,6 +362,7 @@ public:
 	const b2Fixture* GetFixtureList() const;
 
 	/// Get the list of all joints attached to this body.
+    /// 通过某个物体查看它的接触
 	b2JointEdge* GetJointList();
 	const b2JointEdge* GetJointList() const;
 

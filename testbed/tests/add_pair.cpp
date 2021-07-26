@@ -57,9 +57,11 @@ public:
 			b2BodyDef bd;
 			bd.type = b2_dynamicBody;
 			bd.position.Set(-30.0f,5.0f);
+            // bullet属性说明该shape碰撞时不能穿透(没有tunneling) 默认为false
 			bd.bullet = true;
 			b2Body* body = m_world->CreateBody(&bd);
 			body->CreateFixture(&shape, 1.0f);
+            // 设置线性速度
 			body->SetLinearVelocity(b2Vec2(10.0f, 0.0f));
 		}
 	}

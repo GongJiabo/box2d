@@ -537,6 +537,7 @@ int main(int, char**)
     printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
     printf("OpenGL %s, GLSL %s\n", glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+    // 回调函数，线程监听
     glfwSetScrollCallback(g_mainWindow, ScrollCallback);
     glfwSetWindowSizeCallback(g_mainWindow, ResizeWindowCallback);
     glfwSetKeyCallback(g_mainWindow, KeyCallback);

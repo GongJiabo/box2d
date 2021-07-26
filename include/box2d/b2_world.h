@@ -143,6 +143,7 @@ public:
 	/// @return the head of the world contact list.
 	/// @warning contacts are created and destroyed in the middle of a time step.
 	/// Use b2ContactListener to avoid missing contacts.
+    /// 查看世界接触链表来获取当前所有的接触
 	b2Contact* GetContactList();
 	const b2Contact* GetContactList() const;
 

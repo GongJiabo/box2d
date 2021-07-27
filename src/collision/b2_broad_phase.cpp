@@ -130,7 +130,7 @@ bool b2BroadPhase::QueryCallback(int32 proxyId)
 	// Grow the pair buffer as needed.
 	if (m_pairCount == m_pairCapacity)
 	{
-		b2Pair* oldBuffer = m_pairBuffer;
+		b2Pair*  oldBuffer = m_pairBuffer;
 		m_pairCapacity = m_pairCapacity + (m_pairCapacity >> 1);
 		m_pairBuffer = (b2Pair*)b2Alloc(m_pairCapacity * sizeof(b2Pair));
 		memcpy(m_pairBuffer, oldBuffer, m_pairCount * sizeof(b2Pair));

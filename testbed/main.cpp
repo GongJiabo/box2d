@@ -552,7 +552,7 @@ int main(int, char**)
 
     s_settings.m_testIndex = b2Clamp(s_settings.m_testIndex, 0, g_testCount - 1);       // 确保m_testIndex的范围
     s_testSelection = s_settings.m_testIndex;
-    s_test = g_testEntries[s_settings.m_testIndex].createFcn();     // 初始化Test*
+    s_test = g_testEntries[s_settings.m_testIndex].createFcn();     // 初始化Test* 此时动态树和broad_phase已经生成好
 
     // Control the frame rate. One draw per monitor refresh.
     //glfwSwapInterval(1);

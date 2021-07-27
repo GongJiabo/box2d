@@ -238,7 +238,7 @@ inline void b2DynamicTree::Query(T* callback, const b2AABB& aabb) const
 {
     // 申请临时栈，根节点进栈
 	b2GrowableStack<int32, 256> stack;
-	stack.Push(m_root);
+	stack.Push(m_root);         // 根节点索引入栈
     // 判断栈的个数
 	while (stack.GetCount() > 0)
 	{
@@ -254,7 +254,7 @@ inline void b2DynamicTree::Query(T* callback, const b2AABB& aabb) const
         // 测试重叠
 		if (b2TestOverlap(node->aabb, aabb))
 		{
-            // 重叠且为叶子节点
+            // 重叠且为叶子节点, 此时找了一个与aabb(其实也是另一个叶子节点的aabb???)重叠的叶子节点
 			if (node->IsLeaf())
 			{
                 // 回调是否成功, nodeId为所查询的aabb在m_nodes中的位置

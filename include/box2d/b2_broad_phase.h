@@ -198,10 +198,10 @@ void b2BroadPhase::UpdatePairs(T* callback)
 	m_pairCount = 0;
 
 	// Perform tree queries for all moving proxies.
-    // 执行查询树上所有需要移动的代理
+    // 执行查询树上所有需要移动的代理, 遍历顺序其实就是创建时的物体顺序(每个物体的aabb已经保存在树的叶子节点)
 	for (int32 i = 0; i < m_moveCount; ++i)
 	{
-        // 获取在移动缓冲区的代理id
+        // 获取在移动缓冲区的代理id(即在动态树节点的索引m_nodes中 -- leafnode)
 		m_queryProxyId = m_moveBuffer[i];
 		if (m_queryProxyId == e_nullProxy)
 		{

@@ -61,6 +61,7 @@ public:
 
 	/// Return true if contact calculations should be performed between these two shapes.
 	/// @warning for performance reasons this is only called when the AABBs begin to overlap.
+    /// 如果应该在两个具体shapes之间进行contact计算则返回true
 	virtual bool ShouldCollide(b2Fixture* fixtureA, b2Fixture* fixtureB);
 };
 
@@ -88,10 +89,10 @@ class B2_API b2ContactListener
 public:
 	virtual ~b2ContactListener() {}
 
-	/// Called when two fixtures begin to touch.
+	/// Called when two fixtures begin to touch. 两个fixtures开始解除时调用
 	virtual void BeginContact(b2Contact* contact) { B2_NOT_USED(contact); }
 
-	/// Called when two fixtures cease to touch.
+	/// Called when two fixtures cease to touch. 两个fixtures分离时调用
 	virtual void EndContact(b2Contact* contact) { B2_NOT_USED(contact); }
 
 	/// This is called after a contact is updated. This allows you to inspect a
@@ -104,6 +105,7 @@ public:
 	/// Note: if you set the number of contact points to zero, you will not
 	/// get an EndContact callback. However, you may get a BeginContact callback
 	/// the next step.
+    /// 更新contacts时调用，在进入solver前进行检查
 	virtual void PreSolve(b2Contact* contact, const b2Manifold* oldManifold)
 	{
 		B2_NOT_USED(contact);
@@ -116,6 +118,7 @@ public:
 	/// arbitrarily large if the sub-step is small. Hence the impulse is provided explicitly
 	/// in a separate data structure.
 	/// Note: this is only called for contacts that are touching, solid, and awake.
+    /// 在solver结束后进行检查contact(主要检查冲量impulses)
 	virtual void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse)
 	{
 		B2_NOT_USED(contact);
@@ -154,7 +157,7 @@ public:
 	/// @param fraction the fraction along the ray at the point of intersection
 	/// @return -1 to filter, 0 to terminate, fraction to clip the ray for
 	/// closest hit, 1 to continue
-	virtual float ReportFixture(	b2Fixture* fixture, const b2Vec2& point,
+	virtual float ReportFixture(b2Fixture* fixture, const b2Vec2& point,
 									const b2Vec2& normal, float fraction) = 0;
 };
 

@@ -76,7 +76,7 @@ union B2_API b2ContactID
 struct B2_API b2ManifoldPoint
 {
 	b2Vec2 localPoint;		/// 局部点，求解依赖于流形类型
-	float normalImpulse;	/// 切向冲量，用于防治形状的穿透
+	float normalImpulse;	/// 法向冲量，用于防止形状的穿透
 	float tangentImpulse;	/// 切向冲量，用于模拟摩擦
 	b2ContactID id;			/// 唯一地标识一个在两个形状之间的接触点
 };

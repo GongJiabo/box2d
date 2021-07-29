@@ -23,7 +23,7 @@
 #include "box2d/b2_collision.h"
 #include "box2d/b2_distance.h"
 
-// 根据流行和提供的变换初始化结构体
+// 根据流形和提供的变换初始化结构体
 void b2WorldManifold::Initialize(const b2Manifold* manifold,
 						  const b2Transform& xfA, float radiusA,
 						  const b2Transform& xfB, float radiusB)
@@ -99,6 +99,7 @@ void b2WorldManifold::Initialize(const b2Manifold* manifold,
 void b2GetPointStates(b2PointState state1[b2_maxManifoldPoints], b2PointState state2[b2_maxManifoldPoints],
 					  const b2Manifold* manifold1, const b2Manifold* manifold2)
 {
+    // 置空初始状态
 	for (int32 i = 0; i < b2_maxManifoldPoints; ++i)
 	{
 		state1[i] = b2_nullState;
@@ -106,16 +107,20 @@ void b2GetPointStates(b2PointState state1[b2_maxManifoldPoints], b2PointState st
 	}
 
 	// Detect persists and removes.
+    // 遍历manifolad1检测状态的持续和删除
 	for (int32 i = 0; i < manifold1->pointCount; ++i)
 	{
+        // 获取manifolad的接触id
 		b2ContactID id = manifold1->points[i].id;
-
+        // 将状态设置为删除状态
 		state1[i] = b2_removeState;
-
+        // 遍历manifolad2检测是否有接触存在，若有责修改当前状态为持续
 		for (int32 j = 0; j < manifold2->pointCount; ++j)
 		{
+            // 接触点是否相等
 			if (manifold2->points[j].id.key == id.key)
 			{
+                // 改变接触状态
 				state1[i] = b2_persistState;
 				break;
 			}
@@ -123,16 +128,20 @@ void b2GetPointStates(b2PointState state1[b2_maxManifoldPoints], b2PointState st
 	}
 
 	// Detect persists and adds.
+    // 遍历manifolad1检测状态的持续和添加
 	for (int32 i = 0; i < manifold2->pointCount; ++i)
 	{
+        // 获取manifold2的接触id
 		b2ContactID id = manifold2->points[i].id;
-
+        // 将状态置为添加状态
 		state2[i] = b2_addState;
-
+        // 遍历manifolad1检测是否有接触存在， 若有则改变当前状态为持续
 		for (int32 j = 0; j < manifold1->pointCount; ++j)
 		{
+            // 接触点是否相等
 			if (manifold1->points[j].id.key == id.key)
 			{
+                // 改变接触状态
 				state2[i] = b2_persistState;
 				break;
 			}
@@ -244,24 +253,25 @@ int32 b2ClipSegmentToLine(b2ClipVertex vOut[2], const b2ClipVertex vIn[2],
 	return count;
 }
 
-// 测试两个shape是否重叠
+// 测试两个通用shape是否重叠
 bool b2TestOverlap(	const b2Shape* shapeA, int32 indexA,
 					const b2Shape* shapeB, int32 indexB,
 					const b2Transform& xfA, const b2Transform& xfB)
 {
+    // 初始化input变量
 	b2DistanceInput input;
 	input.proxyA.Set(shapeA, indexA);
 	input.proxyB.Set(shapeB, indexB);
 	input.transformA = xfA;
 	input.transformB = xfB;
 	input.useRadii = true;
-
+    // 使用cache变量
 	b2SimplexCache cache;
 	cache.count = 0;
-
+    // 声明output变量，并获取output
 	b2DistanceOutput output;
 
 	b2Distance(&output, &cache, &input);
-
+    // 判断是否重叠，并返回
 	return output.distance < 10.0f * b2_epsilon;
 }

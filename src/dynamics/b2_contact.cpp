@@ -194,7 +194,7 @@ void b2Contact::Update(b2ContactListener* listener)
 	}
 	else
 	{
-		Evaluate(&m_manifold, xfA, xfB);
+		Evaluate(&m_manifold, xfA, xfB);         // 具体形状的碰撞 
 		touching = m_manifold.pointCount > 0;
 
 		// Match old contact ids to new contact ids and copy the

@@ -41,7 +41,7 @@ public:
 
 			b2BodyDef bd;
 			b2Body* ground = m_world->CreateBody(&bd);
-			ground->CreateFixture(&sd);
+			ground->CreateFixture(&sd); // 创建fixture的时候就将对应的aabb插入到动态树中
 		}
 
 		float xLo = -5.0f, xHi = 5.0f;
@@ -129,6 +129,7 @@ public:
 		// We are going to destroy some bodies according to contact
 		// points. We must buffer the bodies that should be destroyed
 		// because they may belong to multiple contact points.
+        // 必须缓冲那些应该被销毁的bodies, 因为他们可能属于多个接触点contact points
 		const int32 k_maxNuke = 6;
 		b2Body* nuke[k_maxNuke];
 		int32 nukeCount = 0;

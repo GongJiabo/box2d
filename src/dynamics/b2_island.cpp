@@ -192,16 +192,17 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 	float h = step.dt;
 
 	// Integrate velocities and apply damping. Initialize the body state.
+    // 对island中所有的body进行速度/位置积分
 	for (int32 i = 0; i < m_bodyCount; ++i)
 	{
 		b2Body* b = m_bodies[i];
-
+        // 更新物体整体的线速度、角速度，主要是环境产生的速度影响，如重力/阻尼/浮力等
 		b2Vec2 c = b->m_sweep.c;
 		float a = b->m_sweep.a;
 		b2Vec2 v = b->m_linearVelocity;
 		float w = b->m_angularVelocity;
 
-		// Store positions for continuous collision.
+		// Store positions for continuous collision.   存储sweep位置用于连续碰撞
 		b->m_sweep.c0 = b->m_sweep.c;
 		b->m_sweep.a0 = b->m_sweep.a;
 
@@ -230,7 +231,7 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 
 	timer.Reset();
 
-	// Solver data
+	// Solver data 设置当前解的数据
 	b2SolverData solverData;
 	solverData.step = step;
 	solverData.positions = m_positions;
@@ -260,15 +261,17 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 
 	profile->solveInit = timer.GetMilliseconds();
 
-	// Solve velocity constraints
+	// Solve velocity constraints 速度约束(关节约束)
 	timer.Reset();
+    // 有约束的contacts的速度迭代求解(迭代计算将速度影响传递)
 	for (int32 i = 0; i < step.velocityIterations; ++i)
 	{
 		for (int32 j = 0; j < m_jointCount; ++j)
 		{
+            // 不同类型的joint有不同的约束
 			m_joints[j]->SolveVelocityConstraints(solverData);
 		}
-
+        // 最后对整个solver约束
 		contactSolver.SolveVelocityConstraints();
 	}
 
@@ -276,7 +279,7 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 	contactSolver.StoreImpulses();
 	profile->solveVelocity = timer.GetMilliseconds();
 
-	// Integrate positions
+	// Integrate positions 积分位置
 	for (int32 i = 0; i < m_bodyCount; ++i)
 	{
 		b2Vec2 c = m_positions[i].c;
@@ -309,9 +312,10 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 		m_velocities[i].w = w;
 	}
 
-	// Solve position constraints
+	// Solve position constraints 位置约束
 	timer.Reset();
 	bool positionSolved = false;
+    // 对有约束的contacts的位置迭代求解(位置修复 防止物体挤到一起)
 	for (int32 i = 0; i < step.positionIterations; ++i)
 	{
 		bool contactsOkay = contactSolver.SolvePositionConstraints();
@@ -343,9 +347,10 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 	}
 
 	profile->solvePosition = timer.GetMilliseconds();
-
+    // 发送碰撞影响的信号
 	Report(contactSolver.m_velocityConstraints);
 
+    // 标记不活跃的刚体，可以减少变化较少的刚体的计算
 	if (allowSleep)
 	{
 		float minSleepTime = b2_maxFloat;

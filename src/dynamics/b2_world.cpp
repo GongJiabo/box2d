@@ -398,6 +398,7 @@ void b2World::Solve(const b2TimeStep& step)
 	m_profile.solvePosition = 0.0f;
 
 	// Size the island for the worst case.
+    // island 与island 之间互不影响(这是island存在的理由，也使得Box2D对island可以生成一个处理一个)提高处理效率
 	b2Island island(m_bodyCount,
 					m_contactManager.m_contactCount,
 					m_jointCount,
@@ -419,10 +420,13 @@ void b2World::Solve(const b2TimeStep& step)
 	}
 
 	// Build and simulate all awake islands.
+    // 建造并模拟所有活动awake的岛屿
 	int32 stackSize = m_bodyCount;
 	b2Body** stack = (b2Body**)m_stackAllocator.Allocate(stackSize * sizeof(b2Body*));
+    // 循环取m_bodyList中的每一个body
 	for (b2Body* seed = m_bodyList; seed; seed = seed->m_next)
 	{
+        // 判断标记及类型
 		if (seed->m_flags & b2Body::e_islandFlag)
 		{
 			continue;
@@ -445,12 +449,13 @@ void b2World::Solve(const b2TimeStep& step)
 		stack[stackCount++] = seed;
 		seed->m_flags |= b2Body::e_islandFlag;
 
-		// Perform a depth first search (DFS) on the constraint graph.
+		// Perform a depth first search (DFS) on the constraint graph.  dfs找到与栈顶body有关系/约束/碰撞的body
 		while (stackCount > 0)
 		{
 			// Grab the next body off the stack and add it to the island.
 			b2Body* b = stack[--stackCount];
 			b2Assert(b->IsEnabled() == true);
+            // 相关body加入island
 			island.Add(b);
 
 			// To keep islands as small as possible, we don't
@@ -488,7 +493,7 @@ void b2World::Solve(const b2TimeStep& step)
 				{
 					continue;
 				}
-
+                // 相关contacts加入island
 				island.Add(contact);
 				contact->m_flags |= b2Contact::e_islandFlag;
 
@@ -521,7 +526,7 @@ void b2World::Solve(const b2TimeStep& step)
 					continue;
 				}
 
-				island.Add(je->joint);
+				island.Add(je->joint);      // 相关joints加入island
 				je->joint->m_islandFlag = true;
 
 				if (other->m_flags & b2Body::e_islandFlag)
@@ -535,6 +540,7 @@ void b2World::Solve(const b2TimeStep& step)
 			}
 		}
 
+        // 此时已经生成一个island，对其进行处理(在island内部物理碰撞模拟)
 		b2Profile profile;
 		island.Solve(&profile, step, m_gravity, m_allowSleep);
 		m_profile.solveInit += profile.solveInit;

@@ -178,6 +178,7 @@ b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def)
 
 	if (m_flags & e_enabledFlag)
 	{
+        // create aabb in dynamic tree
 		b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
 		fixture->CreateProxies(broadPhase, m_xf);
 	}

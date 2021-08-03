@@ -214,11 +214,12 @@ void b2BroadPhase::UpdatePairs(T* callback)
 		const b2AABB& fatAABB = m_tree.GetFatAABB(m_queryProxyId);
 
 		// Query tree, create pairs and add them pair buffer.
-        // 查询树, 创建多个pair并将他们添加到pair缓冲区中
+        // 查询树, 创建多个pair并将他们添加到pair缓冲区中(设置broad_phase::m_pairBuffer)
 		m_tree.Query(this, fatAABB);
 	}
 
-	// Send pairs to caller 发送pairs到客户端
+	// Send pairs to caller 将pairs组成contacts发送到客户端(b2ContactManager::m_contactList)
+    // 这里会对pair进行一些碰撞能否进行的检测（shouldcollide）编号/组别判断等
 	for (int32 i = 0; i < m_pairCount; ++i)
 	{
         // 在pair缓冲区中获取当前的pair
@@ -227,6 +228,8 @@ void b2BroadPhase::UpdatePairs(T* callback)
 		void* userDataA = m_tree.GetUserData(primaryPair->proxyIdA);
 		void* userDataB = m_tree.GetUserData(primaryPair->proxyIdB);
 
+        // 判断b2body::m_contactList(b2ContactEdge类型)是否符合要求
+        // 并将其插入到b2ContactManager::m_contactList(b2Contact类型)
 		callback->AddPair(userDataA, userDataB);
 	}
 

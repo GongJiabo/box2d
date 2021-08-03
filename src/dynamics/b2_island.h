@@ -78,9 +78,9 @@ public:
 	b2StackAllocator* m_allocator;
 	b2ContactListener* m_listener;
 
-	b2Body** m_bodies;
-	b2Contact** m_contacts;
-	b2Joint** m_joints;
+	b2Body** m_bodies;          // 刚体
+	b2Contact** m_contacts;     // 碰撞元素
+	b2Joint** m_joints;         // 连接器(joint)
 
 	b2Position* m_positions;
 	b2Velocity* m_velocities;

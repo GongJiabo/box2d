@@ -174,10 +174,10 @@ protected:
 	// This returns true if the position errors are within tolerance.
 	virtual bool SolvePositionConstraints(const b2SolverData& data) = 0;
 
-	b2JointType m_type;
-	b2Joint* m_prev;
-	b2Joint* m_next;
-	b2JointEdge m_edgeA;
+	b2JointType m_type;     // 关节类型
+	b2Joint* m_prev;        // 前一个关节
+	b2Joint* m_next;        // 后一个关节
+	b2JointEdge m_edgeA;    // 关节边:每个物体连接一个关节
 	b2JointEdge m_edgeB;
 	b2Body* m_bodyA;
 	b2Body* m_bodyB;

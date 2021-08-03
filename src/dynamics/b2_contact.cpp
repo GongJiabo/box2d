@@ -199,6 +199,8 @@ void b2Contact::Update(b2ContactListener* listener)
 
 		// Match old contact ids to new contact ids and copy the
 		// stored impulses to warm start the solver.
+        // 处理当前流形manipointz中所有的接触点:
+        // 将新旧contact的id进行匹配，并复制已存储的impulses用于热启动的solver
 		for (int32 i = 0; i < m_manifold.pointCount; ++i)
 		{
 			b2ManifoldPoint* mp2 = m_manifold.points + i;
